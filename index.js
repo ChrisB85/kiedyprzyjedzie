@@ -1,11 +1,11 @@
-'use strict';
+"use strict"
 
 const config = require("config");
 const playwright = require("playwright-chromium");
 
-var urls = config.get('url');
-var data = {};
+const urls = config.get('url');
 var browser;
+var data = {};
 
 (async () => {
     const browserType = "chromium";
@@ -26,6 +26,11 @@ var browser;
         let stopoverNo = await stopoverNoElem.innerText();
         
         let departures = await page.$$('table.stop-departures tr');
+        if (departures.length == 0) {
+            data[`${stopoverName} ${stopoverNo}`] = [];
+            await page.close();
+            processData();
+        }
         let departuresData = [];
         departures.forEach(async (d) => {
             let departure = {};
