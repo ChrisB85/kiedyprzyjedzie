@@ -10,23 +10,32 @@ var data = {};
 (async () => {
     const browserType = "chromium";
     browser = await playwright[browserType].launch({
-        // headless: false,
+        headless: false,
     });
 
     let context = await browser.newContext();
-    
+
     urls.forEach(async (url) => {
         let page = await context.newPage();
+
         await page.goto(url);
+
+        page.on('console', msg => {
+            console.log(msg.text());
+        });
+
+        await page.addScriptTag({
+            path: 'observer.js'
+        });
 
         let stopoverNameElem = await page.$('.block-search__stop td strong');
         let stopoverName = await stopoverNameElem.innerText();
 
         let stopoverNoElem = await page.$('.block-search__stop td span');
         let stopoverNo = await stopoverNoElem.innerText();
-        
+
         let departuresRows = await page.$$('table.stop-departures tr');
-        
+
         // No departures?
         if (departuresRows.length == 0) {
             data[`${stopoverName} ${stopoverNo}`] = [];
@@ -48,12 +57,12 @@ var data = {};
             departuresArray.push(departure);
             if (departuresArray.length == departuresRows.length) {
                 data[`${stopoverName} ${stopoverNo}`] = departuresArray;
-                await page.close();
+                // await page.close();
                 processData();
             }
         });
     });
-    
+
 })();
 
 async function processData() {
@@ -62,6 +71,6 @@ async function processData() {
     }
     console.log(data);
     console.info("Closing browser...");
-    await browser.close();
-    process.exit();
+    // await browser.close();
+    // process.exit();
 }
