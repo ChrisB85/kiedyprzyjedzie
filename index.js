@@ -25,14 +25,15 @@ var data = {};
         let stopoverNoElem = await page.$('.block-search__stop td span');
         let stopoverNo = await stopoverNoElem.innerText();
         
-        let departures = await page.$$('table.stop-departures tr');
-        if (departures.length == 0) {
+        let departuresElem = await page.$$('table.stop-departuresElem tr');
+        // No departuresElem?
+        if (departuresElem.length == 0) {
             data[`${stopoverName} ${stopoverNo}`] = [];
             await page.close();
             processData();
         }
-        let departuresData = [];
-        departures.forEach(async (d) => {
+        let departuresArray = [];
+        departuresElem.forEach(async (d) => {
             let departure = {};
             let lineNoElem = await d.$('.line-no');
             departure.lineNumber = await lineNoElem.innerText();
@@ -43,9 +44,9 @@ var data = {};
             let lineTimeElem = await d.$('.departure-time');
             departure.lineTime = await lineTimeElem.innerText();
 
-            departuresData.push(departure);
-            if (departuresData.length == departures.length) {
-                data[`${stopoverName} ${stopoverNo}`] = departuresData;
+            departuresArray.push(departure);
+            if (departuresArray.length == departuresElem.length) {
+                data[`${stopoverName} ${stopoverNo}`] = departuresArray;
                 await page.close();
                 processData();
             }
