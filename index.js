@@ -28,6 +28,8 @@ var data = {};
         await page.addScriptTag({
             path: 'observer.js'
         });
+
+        getDepartures(page);
     });
 
 })();
@@ -41,9 +43,11 @@ async function getDepartures(page) {
 
     let departuresRows = await page.$$('table.stop-departures tr');
 
+    var lineKey = `${stopoverName} ${stopoverNo}`;
+
     // No departures?
     if (departuresRows.length == 0) {
-        data[`${stopoverName} ${stopoverNo}`] = [];
+        data[lineKey] = [];
         await page.close();
         processData();
     }
@@ -51,17 +55,17 @@ async function getDepartures(page) {
     departuresRows.forEach(async (d) => {
         let departure = {};
         let lineNoElem = await d.$('.line-no');
-        departure.lineNumber = await lineNoElem.innerText();
+        departure.number = await lineNoElem.innerText();
 
         let lineNameElem = await d.$('.line-direction');
-        departure.lineName = await lineNameElem.innerText();
+        departure.name = await lineNameElem.innerText();
 
         let lineTimeElem = await d.$('.departure-time');
-        departure.lineTime = await lineTimeElem.innerText();
+        departure.time = await lineTimeElem.innerText();
 
         departuresArray.push(departure);
         if (departuresArray.length == departuresRows.length) {
-            data[`${stopoverName} ${stopoverNo}`] = departuresArray;
+            data[lineKey] = departuresArray;
             // await page.close();
             processData();
         }
@@ -73,6 +77,7 @@ async function processData() {
     if (Object.keys(data).length < urls.length) {
         return;
     }
+    console.log("Output data:");
     console.log(data);
     data = [];
     // await browser.close();
