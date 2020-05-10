@@ -1,5 +1,8 @@
 {
     "url": [
         "http://opole.kiedyprzyjedzie.pl/#/stops/548/departures"
-    ]
+    ],
+    "homeAssistantUrl": "",
+    "homeAssistanPort": 8123,
+    "homeAssistantToken": ""
 }

@@ -1,11 +1,33 @@
-"use strict"
+"use strict";
 
 const config = require("config");
 const playwright = require("playwright-chromium");
+const HomeAssistant = require("homeassistant");
 
 const urls = config.get('url');
 var browser;
 var data = {};
+
+var hass = null;
+if (config.has("homeAssistantUrl") && config.get("homeAssistantUrl").length > 0) {
+    hass = new HomeAssistant({
+        // Your Home Assistant host
+        // Optional, defaults to http://locahost
+        host: config.get("homeAssistantUrl"),
+
+        // Your Home Assistant port number
+        // Optional, defaults to 8123
+        port: config.get("homeAssistanPort"),
+
+        // Your long lived access token generated on your profile page.
+        // Optional
+        token: config.get("homeAssistantToken"),
+
+        // Ignores SSL certificate errors, use with caution
+        // Optional, defaults to false
+        ignoreCert: false,
+    });
+}
 
 (async () => {
     const browserType = "chromium";
@@ -34,7 +56,9 @@ var data = {};
 
 })();
 
-async function getDepartures(page) {
+async function getDepartures(page, time = null) {
+    let updateTimeElem = await page.$('.info-strap time');
+    let updateTime = await updateTimeElem.innerText();
     let stopoverNameElem = await page.$('.block-search__stop td strong');
     let stopoverName = await stopoverNameElem.innerText();
 
@@ -43,12 +67,15 @@ async function getDepartures(page) {
 
     let departuresRows = await page.$$('table.stop-departures tr');
 
-    var lineKey = `${stopoverName} ${stopoverNo}`;
-
+    let lineKey = `${stopoverName} ${stopoverNo}`;
+    
     // No departures?
     if (departuresRows.length == 0) {
-        data[lineKey] = [];
-        await page.close();
+        data[lineKey] = {
+            time: updateTime,
+            departures: {}
+        };
+        // await page.close();
         processData();
     }
     let departuresArray = [];
@@ -65,7 +92,10 @@ async function getDepartures(page) {
 
         departuresArray.push(departure);
         if (departuresArray.length == departuresRows.length) {
-            data[lineKey] = departuresArray;
+            data[lineKey] = {
+                time: updateTime,
+                departures: departuresArray
+            };
             // await page.close();
             processData();
         }
@@ -79,7 +109,26 @@ async function processData() {
     }
     console.log("Output data:");
     console.log(data);
-    data = [];
+    var dataString = JSON.stringify(data);
+    await mqttPublish("playwright/sensor/departures", dataString, true);
+
+    data = {};
     // await browser.close();
     // process.exit();
+}
+
+async function mqttPublish(topic, payload, retain = false) {
+    if (hass == null) {
+        return;
+    }
+
+    console.info(`Sending mqtt payload ${payload}...`);
+    hass.services
+        .call("publish", "mqtt", {
+            topic: topic,
+            payload: payload,
+            retain: retain,
+        })
+        .then((res) => { })
+        .catch((err) => console.error(err));
 }
