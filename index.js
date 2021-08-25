@@ -1,7 +1,7 @@
 "use strict";
 
 const config = require("config");
-const playwright = require("playwright-chromium");
+const playwright = require("playwright");
 const HomeAssistant = require("homeassistant");
 
 const urls = config.get('url');

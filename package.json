@@ -11,6 +11,6 @@
   "dependencies": {
     "config": "^3.3.6",
     "homeassistant": "^0.2.0",
-    "playwright-chromium": "^1.9.2"
+    "playwright": "^1.14.1"
   }
 }
