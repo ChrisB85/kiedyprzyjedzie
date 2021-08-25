@@ -6,7 +6,9 @@ const HomeAssistant = require("homeassistant");
 
 const urls = config.get('url');
 var browser;
-var data = {};
+var data = {
+    "data": {}
+};
 
 var hass = null;
 if (config.has("homeAssistantUrl") && config.get("homeAssistantUrl").length > 0) {
@@ -71,7 +73,7 @@ async function getDepartures(page, time = null) {
     
     // No departures?
     if (departuresRows.length == 0) {
-        data[lineKey] = {
+        data["data"][lineKey] = {
             time: updateTime,
             departures: {}
         };
@@ -92,7 +94,7 @@ async function getDepartures(page, time = null) {
 
         departuresArray.push(departure);
         if (departuresArray.length == departuresRows.length) {
-            data[lineKey] = {
+            data["data"][lineKey] = {
                 time: updateTime,
                 departures: departuresArray
             };
@@ -104,15 +106,19 @@ async function getDepartures(page, time = null) {
 
 async function processData() {
     // Not all data retrieved yet
-    if (Object.keys(data).length < urls.length) {
+    
+    if (Object.keys(data["data"]).length < urls.length) {
         return;
     }
+    data["update_time"] = Date.now();
     console.log("Output data:");
     console.log(data);
     var dataString = JSON.stringify(data);
     await mqttPublish("playwright/sensor/departures", dataString, true);
 
-    data = {};
+    data = {
+        "data": {}
+    };
     // await browser.close();
     // process.exit();
 }
